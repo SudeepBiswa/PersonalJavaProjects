@@ -4,7 +4,7 @@ public class ToDo{
     private String dueDate;
     private boolean isCompleted;
     
-    public ToDo(String title, String description, String dueDate){
+    public ToDo(String title, String description, String dueDate, boolean isCompleted){
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
