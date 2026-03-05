@@ -1,8 +1,10 @@
+import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -18,12 +20,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -163,7 +168,9 @@ public class main {
             hyperlink.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    System.out.println("View Description clicked for task: " + task.getTitle());
+                    viewDescriptionPage(cards, task, tasks);
+                    CardLayout cl = (CardLayout) cards.getLayout();
+                    cl.show(cards, "view_description");
                 }
             });
 
@@ -196,24 +203,22 @@ public class main {
         }
 
         JScrollPane scrollPane = new JScrollPane(scrollViewpanel);
+        // Increase scrolling speed
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         homePanel.add(scrollPane);
 
-        JButton testButton = new JButton("Add Task");
-        testButton.addActionListener(e -> {
-            //System.out.println("Add Task Button Clicked!");
-            JPanel testPanel = new JPanel();
-            testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.Y_AXIS));
-            JLabel testLabel = new JLabel("This is a test panel!");
-            testPanel.add(testLabel);
-            // frame.remove(mainPanel);
-            cards.add(testPanel, "test");
+        // Add vertical glue to push the button slightly above the bottom
+        homePanel.add(Box.createVerticalGlue());
+
+        // Add Task button at the bottom center
+        JPanel buttonPanel = new JPanel();
+        JButton addTaskButton = new JButton("Add Task");
+        addTaskButton.addActionListener(e -> {
             CardLayout cl = (CardLayout) cards.getLayout();
             cl.show(cards, "add_tasks");
         });
-        testButton.setBounds(150, 150, 100, 50);
-        scrollViewpanel.add(testButton);
-        // mainPanel.setBackground(Color.BLACK);
-        // scrollViewpanel.setBackground(Color.BLACK);
+        buttonPanel.add(addTaskButton);
+        homePanel.add(buttonPanel);
 
     }
 
@@ -228,18 +233,6 @@ public class main {
         addTasksLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titlePanel.add(addTasksLabel);
         addTasksPanel.add(titlePanel);
-
-        JButton backButton = new JButton("Back");
-        backButton.addActionListener(e -> {
-            CardLayout cl = (CardLayout) cards.getLayout();
-            cl.show(cards, "home");
-        });
-        titlePanel.add(backButton);
-
-        JButton submitButton = new JButton("Submit");
-        submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        titlePanel.add(submitButton);
-        
 
         JPanel formPanel = new JPanel(new GridBagLayout());
         JScrollPane formScroll = new JScrollPane(formPanel);
@@ -272,6 +265,7 @@ public class main {
         titleField.setHorizontalAlignment(SwingConstants.LEFT);
         dueDateField.setHorizontalAlignment(SwingConstants.LEFT);
 
+        JButton submitButton = new JButton("Submit");
         submitButton.addActionListener(e -> {
             //System.out.println("Submit Button Clicked!");
             String title = titleField.getText();
@@ -289,8 +283,10 @@ public class main {
             titleField.setText("");
             descriptionField.setText("");
             dueDateField.setValue(new Date());
-            //CardLayout cl = (CardLayout) cards.getLayout();
-            //cl.show(cards, "home");
+            // Refresh the home page with updated tasks
+            homePage(cards, tasks);
+            CardLayout cl = (CardLayout) cards.getLayout();
+            cl.show(cards, "home");
         });
 
         
@@ -334,9 +330,113 @@ public class main {
 
         addTasksPanel.add(formScroll);
 
-        //formPanel.setHorizontalAlignment(SwingConstants.CENTER);
+        // Add buttons at the bottom
+        JPanel buttonPanel = new JPanel();
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> {
+            CardLayout cl = (CardLayout) cards.getLayout();
+            cl.show(cards, "home");
+        });
+        buttonPanel.add(backButton);
+        buttonPanel.add(submitButton);
+        addTasksPanel.add(buttonPanel);
+    }
 
-        cards.add(addTasksPanel, "add_tasks");
+    private static void viewDescriptionPage(JPanel cards, ToDo task, ArrayList<ToDo> tasks) {
+        JPanel viewPanel = new JPanel();
+        cards.add(viewPanel, "view_description");
+        viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
+
+        // Title panel with remove button
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        JLabel titleLabel = new JLabel("Task Details");
+        titlePanel.add(titleLabel, BorderLayout.WEST);
+
+        JButton removeButton = new JButton("Remove Task");
+        removeButton.addActionListener(e -> {
+            try {
+                deleteTaskFromDatabase(task.getId());
+                tasks.remove(task);
+                homePage(cards, tasks);
+                CardLayout cl = (CardLayout) cards.getLayout();
+                cl.show(cards, "home");
+            } catch (SQLException ex) {
+                System.out.println("Error deleting task: " + ex.getMessage());
+            }
+        });
+        titlePanel.add(removeButton, BorderLayout.EAST);
+        viewPanel.add(titlePanel);
+
+        // Task information
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+
+        JPanel titleP = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        titleP.add(new JLabel("Title: "));
+        titleP.add(new JLabel(task.getTitle()));
+        infoPanel.add(titleP);
+
+        JPanel descP = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        descP.add(new JLabel("Description: "));
+        JTextArea descArea = new JTextArea(task.getDescription(), 5, 20);
+        descArea.setEditable(false);
+        descArea.setLineWrap(true);
+        descArea.setWrapStyleWord(true);
+        JScrollPane descScroll = new JScrollPane(descArea);
+        descScroll.setPreferredSize(new Dimension(300, 100));
+        descP.add(descScroll);
+        infoPanel.add(descP);
+
+        JPanel dateP = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        dateP.add(new JLabel("Due Date: "));
+        dateP.add(new JLabel(task.getDueDate()));
+        infoPanel.add(dateP);
+
+        JPanel statusP = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        statusP.add(new JLabel("Status: "));
+        JRadioButton completedRadio = new JRadioButton("Completed");
+        JRadioButton notCompletedRadio = new JRadioButton("Not Completed");
+        ButtonGroup statusGroup = new ButtonGroup();
+        statusGroup.add(completedRadio);
+        statusGroup.add(notCompletedRadio);
+        if (task.isCompleted()) {
+            completedRadio.setSelected(true);
+        } else {
+            notCompletedRadio.setSelected(true);
+        }
+        completedRadio.addActionListener(e -> {
+            task.setCompleted(true);
+            try {
+                updateTaskStatusInDatabase(task);
+                System.out.println("Task status updated to Completed");
+            } catch (SQLException ex) {
+                System.out.println("Error updating task status: " + ex.getMessage());
+            }
+        });
+        notCompletedRadio.addActionListener(e -> {
+            task.setCompleted(false);
+            try {
+                updateTaskStatusInDatabase(task);
+                System.out.println("Task status updated to Not Completed");
+            } catch (SQLException ex) {
+                System.out.println("Error updating task status: " + ex.getMessage());
+            }
+        });
+        statusP.add(completedRadio);
+        statusP.add(notCompletedRadio);
+        infoPanel.add(statusP);
+
+        viewPanel.add(infoPanel);
+
+        // Back button at the bottom
+        JPanel buttonPanel = new JPanel();
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> {
+            CardLayout cl = (CardLayout) cards.getLayout();
+            cl.show(cards, "home");
+        });
+        buttonPanel.add(backButton);
+        viewPanel.add(buttonPanel);
     }
 
     private static void addTask(ArrayList<ToDo> tasks) {
@@ -372,12 +472,36 @@ public class main {
 
     private static void insertTaskIntoDatabase(ToDo task) throws SQLException {
         String sql = "INSERT INTO Tasks(title, description, due_date, completion_status) VALUES(?,?,?,?)";
-        try (var pstmt = conn.prepareStatement(sql)) {
+        try (var pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, task.getTitle());
             pstmt.setString(2, task.getDescription());
             pstmt.setString(3, task.getDueDate());
             pstmt.setBoolean(4, task.isCompleted());
             pstmt.executeUpdate();
+            try (var rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    task.setId(rs.getInt(1));
+                }
+            }
+        }
+    }
+
+    private static void updateTaskStatusInDatabase(ToDo task) throws SQLException {
+        String sql = "UPDATE Tasks SET completion_status = ? WHERE id = ?";
+        try (var pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBoolean(1, task.isCompleted());
+            pstmt.setInt(2, task.getId());
+            pstmt.executeUpdate();
+        }
+    }
+
+    private static void deleteTaskFromDatabase(int id) throws SQLException {
+        String sql = "DELETE FROM Tasks WHERE id = ?";
+        try (var pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error deleting task from database: " + e.getMessage());
         }
     }
 
@@ -398,6 +522,7 @@ public class main {
                 var rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 tasks.add(new ToDo(
+                        rs.getInt("id"),
                         rs.getString("title"),
                         rs.getString("description"),
                         rs.getString("due_date"),
