@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "ToDoCompletionTest",
+            "request": "launch",
+            "mainClass": "ToDoCompletionTest",
+            "projectName": "PersonalJavaProjects_6f862f0c"
+        },
+        {
+            "type": "java",
             "name": "Run ToDoList App",
             "request": "launch",
             "mainClass": "app",
