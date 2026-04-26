@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run ToDoList App",
+            "request": "launch",
+            "mainClass": "app",
+            "classPaths": [
+                "${workspaceFolder}/ToDoList/bin",
+                "${workspaceFolder}/lib/sqlite-jdbc-3.51.1.0.jar"
+            ]
+        }
+    ]
+}

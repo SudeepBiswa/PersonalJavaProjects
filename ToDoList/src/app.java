@@ -34,7 +34,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-public class main {
+public class app {
     // shared database connection for entire session
     private static Connection conn;
 
@@ -54,7 +54,7 @@ public class main {
         // button.setBounds(150, 150, 100, 50);
         // frame.add(button);
         JPanel cards = new JPanel(new CardLayout());
-        
+
 
         frame.add(cards);
         try {
@@ -167,7 +167,7 @@ public class main {
             hyperlink.setForeground(Color.BLUE.darker()); // Set text color to blue
             hyperlink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // Change cursor to a hand icon on hover
             hyperlink.setFont(hyperlink.getFont().deriveFont(15f));
-            
+
             hyperlink.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -328,7 +328,7 @@ public class main {
             cl.show(cards, "home");
         });
 
-        
+
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.WEST;
