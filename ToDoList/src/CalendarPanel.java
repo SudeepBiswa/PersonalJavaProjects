@@ -53,10 +53,12 @@ public class CalendarPanel extends JPanel {
     private JButton weekButton;
     private JButton monthButton;
 
+    // Creates a calendar panel with no service yet.
     public CalendarPanel() {
         this(null);
     }
 
+    // Creates the calendar panel and sets the first view.
     public CalendarPanel(CalendarService calendarService) {
         this.calendarService = calendarService;
         this.currentViewMode = CalendarViewMode.MONTH;
@@ -65,33 +67,40 @@ public class CalendarPanel extends JPanel {
         refreshCalendar();
     }
 
+    // Gives back the service that stores calendar tasks.
     public CalendarService getCalendarService() {
         return calendarService;
     }
 
+    // Sets the service and redraws the calendar.
     public void setCalendarService(CalendarService calendarService) {
         this.calendarService = calendarService;
         refreshCalendar();
     }
 
+    // Gives back the current view type.
     public CalendarViewMode getCurrentViewMode() {
         return currentViewMode;
     }
 
+    // Changes the current view type.
     public void setCurrentViewMode(CalendarViewMode currentViewMode) {
         this.currentViewMode = currentViewMode;
         updateViewButtons();
     }
 
+    // Gives back the date the calendar is focused on.
     public LocalDate getFocusedDate() {
         return focusedDate;
     }
 
+    // Sets the focused date and redraws the calendar.
     public void setFocusedDate(LocalDate focusedDate) {
         this.focusedDate = focusedDate;
         refreshCalendar();
     }
 
+    // Builds the main calendar layout.
     public void initializeComponents() {
         removeAll();
         setLayout(new BorderLayout(16, 16));
@@ -102,6 +111,7 @@ public class CalendarPanel extends JPanel {
         add(buildCenterPanel(), BorderLayout.CENTER);
     }
 
+    // Redraws the calendar for the current date and view.
     public void refreshCalendar() {
         monthTitleLabel.setText(focusedDate.format(MONTH_FORMAT));
         rebuildMonthGrid();
@@ -111,26 +121,31 @@ public class CalendarPanel extends JPanel {
         repaint();
     }
 
+    // Switches to the day view.
     public void showDayView() {
         setCurrentViewMode(CalendarViewMode.DAY);
         refreshCalendar();
     }
 
+    // Switches to the week view.
     public void showWeekView() {
         setCurrentViewMode(CalendarViewMode.WEEK);
         refreshCalendar();
     }
 
+    // Switches to the month view.
     public void showMonthView() {
         setCurrentViewMode(CalendarViewMode.MONTH);
         refreshCalendar();
     }
 
+    // Selects a date and redraws the calendar.
     public void selectDate(LocalDate date) {
         this.focusedDate = date;
         refreshCalendar();
     }
 
+    // Shows a popup with details for one task.
     public void openTaskEntry(CalendarTaskEntry entry) {
         String title = entry.getTask() == null ? "Untitled Task" : entry.getTask().getTitle();
         String description = entry.getTask() == null ? "" : entry.getTask().getDescription();
@@ -145,6 +160,7 @@ public class CalendarPanel extends JPanel {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
+    // Moves the focused date based on the current view.
     private void moveFocusedDate(int direction) {
         if (currentViewMode == CalendarViewMode.DAY) {
             focusedDate = focusedDate.plusDays(direction);
@@ -156,6 +172,7 @@ public class CalendarPanel extends JPanel {
         refreshCalendar();
     }
 
+    // Builds the title, view buttons, and arrow buttons.
     private JPanel buildTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout(12, 0));
         topPanel.setOpaque(false);
@@ -237,6 +254,7 @@ public class CalendarPanel extends JPanel {
         return topPanel;
     }
 
+    // Builds the month, week, and day view panels.
     private JPanel buildCenterPanel() {
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
@@ -325,6 +343,7 @@ public class CalendarPanel extends JPanel {
         return centerPanel;
     }
 
+    // Rebuilds the task list for the focused day.
     private void rebuildDayTaskList() {
         if (dayTasksPanel == null) {
             return;
@@ -356,6 +375,7 @@ public class CalendarPanel extends JPanel {
         }
     }
 
+    // Builds one task card for the day view.
     private JPanel createTaskListCard(CalendarTaskEntry entry) {
         JPanel card = new JPanel(new BorderLayout(0, 8));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -399,6 +419,7 @@ public class CalendarPanel extends JPanel {
         return card;
     }
 
+    // Builds the time text for a task.
     private String buildTimeText(CalendarTaskEntry entry) {
         if (entry.getStartDateTime() != null && entry.getEndDateTime() != null) {
             return entry.getStartDateTime().toLocalTime() + " - " + entry.getEndDateTime().toLocalTime();
@@ -409,6 +430,7 @@ public class CalendarPanel extends JPanel {
         return "Time not set";
     }
 
+    // Gets all tasks for the focused date.
     private List<CalendarTaskEntry> getEntriesForFocusedDate() {
         if (calendarService == null || calendarService.getTaskCalendar() == null) {
             return new ArrayList<>();
@@ -416,6 +438,7 @@ public class CalendarPanel extends JPanel {
         return calendarService.getTasksForDate(focusedDate);
     }
 
+    // Rebuilds all day cells in the month view.
     private void rebuildMonthGrid() {
         monthGridPanel.removeAll();
         LocalDate firstDay = focusedDate.withDayOfMonth(1);
@@ -430,6 +453,7 @@ public class CalendarPanel extends JPanel {
         updateViewButtons();
     }
 
+    // Rebuilds all day cells in the week view.
     private void rebuildWeekGrid() {
         if (weekGridPanel == null) {
             return;
@@ -444,6 +468,7 @@ public class CalendarPanel extends JPanel {
         }
     }
 
+    // Builds one day cell for the week view.
     private JPanel createWeekCell(LocalDate cellDate) {
         JPanel cell = new JPanel(new BorderLayout(0, 8));
         cell.setOpaque(true);
@@ -472,6 +497,7 @@ public class CalendarPanel extends JPanel {
         return cell;
     }
 
+    // Builds one day cell for the month view.
     private JPanel createDayCell(LocalDate cellDate) {
         JPanel cell = new JPanel(new BorderLayout(0, 8));
         cell.setOpaque(true);
@@ -501,6 +527,7 @@ public class CalendarPanel extends JPanel {
         return cell;
     }
 
+    // Picks the background color for a day cell.
     private Color getDayColor(LocalDate cellDate) {
         if (cellDate.equals(focusedDate)) {
             return PRIMARY_SOFT;
@@ -511,6 +538,7 @@ public class CalendarPanel extends JPanel {
         return CARD_BACKGROUND;
     }
 
+    // Builds the short label shown inside a day cell.
     private String getCellText(LocalDate cellDate) {
         int taskCount = getTaskCount(cellDate);
         if (taskCount == 1) {
@@ -534,6 +562,7 @@ public class CalendarPanel extends JPanel {
         return "No tasks";
     }
 
+    // Counts tasks on one date.
     private int getTaskCount(LocalDate cellDate) {
         if (calendarService == null) {
             return 0;
@@ -541,6 +570,7 @@ public class CalendarPanel extends JPanel {
         return calendarService.getTasksForDate(cellDate).size();
     }
 
+    // Shows the panel for the current view.
     private void updateVisibleView() {
         if (contentLayout == null || calendarContentPanel == null) {
             return;
@@ -556,6 +586,7 @@ public class CalendarPanel extends JPanel {
         }
     }
 
+    // Creates a styled panel for calendar grids.
     private JPanel createGridPanel(BorderLayout layout) {
         JPanel panel = new JPanel(layout);
         panel.setBackground(CARD_BACKGROUND);
@@ -565,6 +596,7 @@ public class CalendarPanel extends JPanel {
         return panel;
     }
 
+    // Creates a plain button that matches the calendar style.
     private JButton createFlatButton(String text) {
         JButton button = new JButton(text);
         button.setFocusPainted(false);
@@ -577,12 +609,14 @@ public class CalendarPanel extends JPanel {
         return button;
     }
 
+    // Updates which view button looks selected.
     private void updateViewButtons() {
         styleViewButton(dayButton, currentViewMode == CalendarViewMode.DAY);
         styleViewButton(weekButton, currentViewMode == CalendarViewMode.WEEK);
         styleViewButton(monthButton, currentViewMode == CalendarViewMode.MONTH);
     }
 
+    // Styles one view button as selected or not selected.
     private void styleViewButton(JButton button, boolean selected) {
         if (button == null) {
             return;
