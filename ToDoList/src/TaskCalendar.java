@@ -1,4 +1,5 @@
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TaskCalendar {
@@ -10,6 +11,9 @@ public class TaskCalendar {
     private List<CalendarTaskEntry> entries;
 
     public TaskCalendar() {
+        this.defaultViewMode = CalendarViewMode.MONTH;
+        this.selectedDate = LocalDate.now();
+        this.entries = new ArrayList<>();
     }
 
     public TaskCalendar(
@@ -24,7 +28,7 @@ public class TaskCalendar {
         this.description = description;
         this.defaultViewMode = defaultViewMode;
         this.selectedDate = selectedDate;
-        this.entries = entries;
+        this.entries = entries == null ? new ArrayList<>() : entries;
     }
 
     public int getId() {
@@ -72,26 +76,58 @@ public class TaskCalendar {
     }
 
     public void setEntries(List<CalendarTaskEntry> entries) {
-        this.entries = entries;
+        this.entries = entries == null ? new ArrayList<>() : entries;
     }
 
     public void addEntry(CalendarTaskEntry entry) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if (entry == null) {
+            return;
+        }
+        if (entries == null) {
+            entries = new ArrayList<>();
+        }
+        entries.add(entry);
     }
 
     public void removeEntry(CalendarTaskEntry entry) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if (entries != null) {
+            entries.remove(entry);
+        }
     }
 
     public List<CalendarTaskEntry> getEntriesForDate(LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        List<CalendarTaskEntry> results = new ArrayList<>();
+        if (date == null || entries == null) {
+            return results;
+        }
+        for (CalendarTaskEntry entry : entries) {
+            if (entry != null && entry.occursOn(date)) {
+                results.add(entry);
+            }
+        }
+        return results;
     }
 
     public List<CalendarTaskEntry> getEntriesForRange(LocalDate startDate, LocalDate endDate) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        List<CalendarTaskEntry> results = new ArrayList<>();
+        if (startDate == null || endDate == null || entries == null || endDate.isBefore(startDate)) {
+            return results;
+        }
+        for (CalendarTaskEntry entry : entries) {
+            if (entry == null || entry.getScheduledDate() == null) {
+                continue;
+            }
+            LocalDate scheduledDate = entry.getScheduledDate();
+            if (!scheduledDate.isBefore(startDate) && !scheduledDate.isAfter(endDate)) {
+                results.add(entry);
+            }
+        }
+        return results;
     }
 
     public void changeViewMode(CalendarViewMode viewMode) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if (viewMode != null) {
+            defaultViewMode = viewMode;
+        }
     }
 }

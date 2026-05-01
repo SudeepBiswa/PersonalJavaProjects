@@ -16,6 +16,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
@@ -37,6 +40,9 @@ import javax.swing.SwingConstants;
 public class app {
     // shared database connection for entire session
     private static Connection conn;
+    private static CalendarService calendarService;
+    private static CalendarPanel calendarPanel;
+    private static final DateTimeFormatter TASK_DATE_FORMAT = DateTimeFormatter.ofPattern("M/d/yyyy");
 
     public static void main(String[] args) {
         System.out.println(System.getProperty("java.class.path"));
@@ -64,6 +70,7 @@ public class app {
 
             createTasksTable();
             ArrayList<ToDo> tasks = getData();
+            calendarService = buildCalendarService(tasks);
 
             homePage(cards, tasks);
             addTasksPage(cards, tasks);
@@ -314,6 +321,7 @@ public class app {
             tasks.add(newTask);
             try {
                 insertTaskIntoDatabase(newTask);
+                scheduleTaskOnCalendar(newTask);
                 System.out.println("Task inserted into database successfully!");
             } catch (SQLException ex) {
                 System.out.println("Error inserting task into database: " + ex.getMessage());
@@ -423,6 +431,7 @@ public class app {
             try {
                 deleteTaskFromDatabase(task.getId());
                 tasks.remove(task);
+                unscheduleTaskFromCalendar(task);
                 homePage(cards, tasks);
                 CardLayout cl = (CardLayout) cards.getLayout();
                 cl.show(cards, "home");
@@ -557,8 +566,9 @@ public class app {
         });
         topBar.add(backButton);
 
+        calendarPanel = new CalendarPanel(calendarService);
         calendarContainer.add(topBar, BorderLayout.NORTH);
-        calendarContainer.add(new CalendarPanel(), BorderLayout.CENTER);
+        calendarContainer.add(calendarPanel, BorderLayout.CENTER);
     }
 
     private static void addTask(ArrayList<ToDo> tasks) {
@@ -654,6 +664,64 @@ public class app {
             System.out.println("Error retrieving tasks from database: " + e.getMessage());
         }
         return tasks;
+    }
+
+    private static CalendarService buildCalendarService(ArrayList<ToDo> tasks) {
+        TaskCalendar taskCalendar = new TaskCalendar(
+                1,
+                "Task Calendar",
+                "Tasks grouped by due date",
+                CalendarViewMode.MONTH,
+                LocalDate.now(),
+                new ArrayList<>());
+        CalendarService service = new CalendarService(taskCalendar);
+        for (ToDo task : tasks) {
+            LocalDate dueDate = parseTaskDate(task.getDueDate());
+            if (dueDate != null) {
+                service.scheduleTask(task, dueDate);
+            }
+        }
+        return service;
+    }
+
+    private static void scheduleTaskOnCalendar(ToDo task) {
+        if (calendarService == null) {
+            calendarService = new CalendarService();
+        }
+        LocalDate dueDate = parseTaskDate(task.getDueDate());
+        if (dueDate != null) {
+            calendarService.scheduleTask(task, dueDate);
+        }
+        refreshCalendarPanel();
+    }
+
+    private static void unscheduleTaskFromCalendar(ToDo task) {
+        if (calendarService != null && task != null) {
+            calendarService.unscheduleTask(task.getId());
+        }
+        refreshCalendarPanel();
+    }
+
+    private static void refreshCalendarPanel() {
+        if (calendarPanel != null) {
+            calendarPanel.refreshCalendar();
+        }
+    }
+
+    private static LocalDate parseTaskDate(String dueDate) {
+        if (dueDate == null || dueDate.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dueDate, TASK_DATE_FORMAT);
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDate.parse(dueDate);
+            } catch (DateTimeParseException secondIgnored) {
+                System.out.println("Skipping calendar entry with invalid due date: " + dueDate);
+                return null;
+            }
+        }
     }
 
     /**

@@ -98,14 +98,26 @@ public class CalendarTaskEntry {
     }
 
     public boolean overlaps(CalendarTaskEntry otherEntry) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if (otherEntry == null || !occursOn(otherEntry.getScheduledDate())) {
+            return false;
+        }
+        if (isAllDay() || otherEntry.isAllDay()) {
+            return true;
+        }
+        if (!hasTimeRange() || !otherEntry.hasTimeRange()) {
+            return false;
+        }
+        return startDateTime.isBefore(otherEntry.getEndDateTime())
+                && endDateTime.isAfter(otherEntry.getStartDateTime());
     }
 
     public boolean occursOn(LocalDate date) {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return date != null && date.equals(scheduledDate);
     }
 
     public boolean hasTimeRange() {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        return startDateTime != null
+                && endDateTime != null
+                && startDateTime.isBefore(endDateTime);
     }
 }

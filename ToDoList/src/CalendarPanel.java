@@ -71,6 +71,7 @@ public class CalendarPanel extends JPanel {
 
     public void setCalendarService(CalendarService calendarService) {
         this.calendarService = calendarService;
+        refreshCalendar();
     }
 
     public CalendarViewMode getCurrentViewMode() {
@@ -131,11 +132,28 @@ public class CalendarPanel extends JPanel {
     }
 
     public void openTaskEntry(CalendarTaskEntry entry) {
+        String title = entry.getTask() == null ? "Untitled Task" : entry.getTask().getTitle();
+        String description = entry.getTask() == null ? "" : entry.getTask().getDescription();
+        String message = title + "\n"
+                + "Date: " + entry.getScheduledDate() + "\n"
+                + "Time: " + (entry.isAllDay() ? "All day" : buildTimeText(entry)) + "\n\n"
+                + (description == null || description.isBlank() ? "No description." : description);
         JOptionPane.showMessageDialog(
                 this,
-                "This is just the calendar UI for now.\nTask scheduling can be connected later.",
+                message,
                 "Calendar Entry",
                 JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void moveFocusedDate(int direction) {
+        if (currentViewMode == CalendarViewMode.DAY) {
+            focusedDate = focusedDate.plusDays(direction);
+        } else if (currentViewMode == CalendarViewMode.WEEK) {
+            focusedDate = focusedDate.plusWeeks(direction);
+        } else {
+            focusedDate = focusedDate.plusMonths(direction);
+        }
+        refreshCalendar();
     }
 
     private JPanel buildTopPanel() {
@@ -166,16 +184,14 @@ public class CalendarPanel extends JPanel {
         monthButton.setPreferredSize(new Dimension(72, 28));
 
         previousButton.addActionListener(event -> {
-            focusedDate = focusedDate.minusMonths(1);
-            refreshCalendar();
+            moveFocusedDate(-1);
         });
         todayButton.addActionListener(event -> {
             focusedDate = LocalDate.now();
             refreshCalendar();
         });
         nextButton.addActionListener(event -> {
-            focusedDate = focusedDate.plusMonths(1);
-            refreshCalendar();
+            moveFocusedDate(1);
         });
         dayButton.addActionListener(event -> showDayView());
         weekButton.addActionListener(event -> showWeekView());
@@ -394,25 +410,10 @@ public class CalendarPanel extends JPanel {
     }
 
     private List<CalendarTaskEntry> getEntriesForFocusedDate() {
-        List<CalendarTaskEntry> entriesForDay = new ArrayList<>();
         if (calendarService == null || calendarService.getTaskCalendar() == null) {
-            return entriesForDay;
+            return new ArrayList<>();
         }
-
-        List<CalendarTaskEntry> entries = calendarService.getTaskCalendar().getEntries();
-        if (entries == null) {
-            return entriesForDay;
-        }
-
-        for (CalendarTaskEntry entry : entries) {
-            if (entry == null) {
-                continue;
-            }
-            if (focusedDate.equals(entry.getScheduledDate())) {
-                entriesForDay.add(entry);
-            }
-        }
-        return entriesForDay;
+        return calendarService.getTasksForDate(focusedDate);
     }
 
     private void rebuildMonthGrid() {
@@ -511,6 +512,13 @@ public class CalendarPanel extends JPanel {
     }
 
     private String getCellText(LocalDate cellDate) {
+        int taskCount = getTaskCount(cellDate);
+        if (taskCount == 1) {
+            return "1 task";
+        }
+        if (taskCount > 1) {
+            return taskCount + " tasks";
+        }
         if (cellDate.equals(LocalDate.now())) {
             return "Today";
         }
@@ -524,6 +532,13 @@ public class CalendarPanel extends JPanel {
             return "Week view";
         }
         return "No tasks";
+    }
+
+    private int getTaskCount(LocalDate cellDate) {
+        if (calendarService == null) {
+            return 0;
+        }
+        return calendarService.getTasksForDate(cellDate).size();
     }
 
     private void updateVisibleView() {
