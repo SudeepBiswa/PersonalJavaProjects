@@ -16,6 +16,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -47,8 +50,6 @@ public class app {
     public static void main(String[] args) {
         System.out.println(System.getProperty("java.class.path"));
 
-        String url = "jdbc:sqlite:ToDoList/data/tasks.db";
-
         JFrame frame = new JFrame();
         frame.setTitle("ToDo List Application");
         frame.setSize(1180, 760);
@@ -64,6 +65,7 @@ public class app {
 
         frame.add(cards);
         try {
+            String url = buildDatabaseUrl();
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection(url);
             System.out.println("Connected to the database!");
@@ -90,6 +92,21 @@ public class app {
             closeConnection();
         }
 
+    }
+
+    // Builds a database path that works from Maven and VS Code.
+    private static String buildDatabaseUrl() {
+        Path mavenDataPath = Path.of("data", "tasks.db");
+        Path vscodeDataPath = Path.of("ToDoList", "data", "tasks.db");
+        Path databasePath = Files.exists(mavenDataPath.getParent()) ? mavenDataPath : vscodeDataPath;
+
+        try {
+            Files.createDirectories(databasePath.getParent());
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not create data folder.", e);
+        }
+
+        return "jdbc:sqlite:" + databasePath.toString().replace("\\", "/");
     }
 
     private static void startTestProgram() { // unused in current UI
